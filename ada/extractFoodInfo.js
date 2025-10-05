@@ -171,7 +171,7 @@ if (savings2) {
     console.log('One or both foods not found in the data.');
 }
 
-#document.getElementById('price-savings').innerHTML = recorded_total_savings[1];
-#document.getElementById('emissions-savings').innerHTML = recorded_total_savings[0];
+// document.getElementById('price-savings').innerHTML = recorded_total_savings[1];
+// document.getElementById('emissions-savings').innerHTML = recorded_total_savings[0];
 document.getElementById('price-savings').innerHTML = 14.88;
 document.getElementById('emissions-savings').innerHTML = 3.27;
