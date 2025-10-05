@@ -408,18 +408,17 @@
         async function callAIForAlternatives(itemName) {
             const API_URL = 'http://localhost:3001/api/claude';
             
-            const prompt = `You are a grocery store assistant. For the food item "${itemName}", suggest 2 similar alternative food items that a customer might consider instead.
+            const prompt = `For the food item "${itemName}", suggest exactly 2 similar alternative food items from the same category.
 
-Rules:
-1. Suggest items from the same food category (fruits, vegetables, proteins, dairy, grains, etc.)
-2. Consider dietary preferences and common substitutions
-3. Use common grocery store names
-4. Return ONLY the 2 alternative item names, separated by commas
-5. No explanations, just the names
+CRITICAL: Return ONLY the 2 item names separated by a comma. No explanations, no prefixes, no additional text.
 
-Example: "apples" → "bananas, oranges"
-Example: "milk" → "oat milk, almond milk"
-Example: "beef" → "chicken, pork"`;
+Examples:
+- apples → bananas, oranges
+- milk → oat milk, almond milk  
+- beef → chicken, pork
+- bread → bagels, croissants
+
+Your response:`;
 
             try {
                 const response = await fetch(API_URL, {
@@ -438,7 +437,25 @@ Example: "beef" → "chicken, pork"`;
                 
                 const data = await response.json();
                 if (data.success && data.items) {
-                    return data.items;
+                    // Clean up the AI response - remove any explanatory text
+                    const cleanItems = data.items.map(item => {
+                        // Remove common AI response prefixes
+                        let cleanItem = item.replace(/^(here are|alternatives?|options?|suggestions?):?\s*/i, '');
+                        cleanItem = cleanItem.replace(/^(some|a few|two)\s+/i, '');
+                        cleanItem = cleanItem.replace(/^(you could try|consider|try)\s+/i, '');
+                        cleanItem = cleanItem.replace(/[.!?]+$/, ''); // Remove trailing punctuation
+                        return cleanItem.trim();
+                    }).filter(item => item.length > 0 && !item.match(/^(and|or|the|a|an)\s/i));
+                    
+                    // Validate that items look like food names (simple check)
+                    const validItems = cleanItems.filter(item => {
+                        // Basic validation - must be longer than 1 char and not common non-food words
+                        return item.length > 1 && 
+                               !item.match(/^(here|there|some|any|all|each|every|this|that|these|those|could|would|should|might|may|can|will|shall|is|are|was|were|be|been|being|have|has|had|having|do|does|did|doing|get|gets|got|getting|make|makes|made|making|go|goes|went|going|come|comes|came|coming|see|sees|saw|seeing|know|knows|knew|knowing|think|thinks|thought|thinking|want|wants|wanted|wanting|like|likes|liked|liking|need|needs|needed|needing|use|uses|used|using|find|finds|found|finding|give|gives|gave|giving|tell|tells|told|telling|work|works|worked|working|call|calls|called|calling|ask|asks|asked|asking|feel|feels|felt|feeling|leave|leaves|left|leaving|put|puts|putting|mean|means|meant|meaning|keep|keeps|kept|keeping|let|lets|letting|begin|begins|began|beginning|seem|seems|seemed|seeming|help|helps|helped|helping|show|shows|showed|showing|hear|hears|heard|hearing|play|plays|played|playing|run|runs|ran|running|move|moves|moved|moving|live|lives|lived|living|believe|believes|believed|believing|hold|holds|held|holding|bring|brings|brought|bringing|happen|happens|happened|happening|write|writes|wrote|writing|provide|provides|provided|providing|sit|sits|sat|sitting|stand|stands|stood|standing|lose|loses|lost|losing|pay|pays|paid|paying|meet|meets|met|meeting|include|includes|included|including|continue|continues|continued|continuing|set|sets|setting|learn|learns|learned|learning|change|changes|changed|changing|lead|leads|led|leading|understand|understands|understood|understanding|watch|watches|watched|watching|follow|follows|followed|following|stop|stops|stopped|stopping|create|creates|created|creating|speak|speaks|spoke|speaking|read|reads|reading|allow|allows|allowed|allowing|add|adds|added|adding|spend|spends|spent|spending|grow|grows|grew|growing|open|opens|opened|opening|walk|walks|walked|walking|win|wins|won|winning|offer|offers|offered|offering|remember|remembers|remembered|remembering|love|loves|loved|loving|consider|considers|considered|considering|appear|appears|appeared|appearing|buy|buys|bought|buying|wait|waits|waited|waiting|serve|serves|served|serving|die|dies|died|dying|send|sends|sent|sending|expect|expects|expected|expecting|build|builds|built|building|stay|stays|stayed|staying|fall|falls|fell|falling|cut|cuts|cutting|reach|reaches|reached|reaching|kill|kills|killed|killing|remain|remains|remained|remaining|suggest|suggests|suggested|suggesting|raise|raises|raised|raising|pass|passes|passed|passing|sell|sells|sold|selling|require|requires|required|requiring|report|reports|reported|reporting|decide|decides|decided|deciding|pull|pulls|pulled|pulling)$/i);
+                    });
+                    
+                    console.log('🤖 AI alternatives cleaned and validated:', validItems);
+                    return validItems.slice(0, 2); // Take only first 2
                 }
                 
                 // If response format is different, try to parse the text
