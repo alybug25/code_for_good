@@ -330,15 +330,23 @@
         
         // Function to compare two foods and calculate savings
         function compareTwoFoods(initialFood, chosenFood, foodTable) {
-            const initialData = findPriceAndEmissions(initialFood, foodTable);
-            const chosenData = findPriceAndEmissions(chosenFood, foodTable);
+            // Use the same getFoodData function that's used throughout the app
+            const initialData = getFoodData(initialFood);
+            const chosenData = getFoodData(chosenFood);
             
             if (!initialData || !chosenData) {
+                console.log('❌ Could not find data for comparison:', { initialFood, chosenFood });
                 return null;
             }
             
             const emissionsSavings = initialData.emissions - chosenData.emissions;
             const priceSavings = initialData.price - chosenData.price;
+            
+            console.log('💰 Savings calculation:', {
+                initial: { name: initialFood, price: initialData.price, emissions: initialData.emissions },
+                chosen: { name: chosenFood, price: chosenData.price, emissions: chosenData.emissions },
+                savings: { price: priceSavings, emissions: emissionsSavings }
+            });
             
             return {
                 emissionsSavings: emissionsSavings,
@@ -446,6 +454,29 @@ Example: "beef" → "chicken, pork"`;
             }
         }
         
+        // Function to generate meaningful fallback alternatives
+        function generateFallbackAlternatives(itemName) {
+            const item = itemName.toLowerCase();
+            
+            // Try to generate meaningful alternatives based on common patterns
+            if (item.includes('cheese')) {
+                return ['Different brand cheese', 'Alternative cheese type'];
+            } else if (item.includes('milk')) {
+                return ['Different brand milk', 'Alternative milk type'];
+            } else if (item.includes('bread')) {
+                return ['Different brand bread', 'Alternative bread type'];
+            } else if (item.includes('meat') || item.includes('chicken') || item.includes('beef') || item.includes('pork')) {
+                return ['Different brand ' + itemName, 'Alternative ' + itemName + ' type'];
+            } else if (item.includes('fruit') || item.includes('apple') || item.includes('banana') || item.includes('orange')) {
+                return ['Different brand ' + itemName, 'Alternative ' + itemName + ' variety'];
+            } else if (item.includes('vegetable') || item.includes('carrot') || item.includes('tomato') || item.includes('cucumber')) {
+                return ['Different brand ' + itemName, 'Alternative ' + itemName + ' variety'];
+            } else {
+                // Generic fallback
+                return ['Different brand ' + itemName, 'Alternative ' + itemName];
+            }
+        }
+        
         // Function to find similar food items with hardcoded examples
         async function findSimilarItems(itemName) {
             // First try hardcoded similar items with realistic data
@@ -468,7 +499,19 @@ Example: "beef" → "chicken, pork"`;
                 'raspberries': ['strawberries', 'blueberries'],
                 'pineapple': ['mango', 'papaya'],
                 'parmesan cheese': ['cheddar cheese', 'mozzarella'],
-                'cheddar cheese': ['parmesan cheese', 'gouda']
+                'cheddar cheese': ['parmesan cheese', 'gouda'],
+                'turkey': ['chicken', 'pork'],
+                'bagels': ['bread', 'croissants'],
+                'croissants': ['bread', 'bagels'],
+                'oat milk': ['milk', 'almond milk'],
+                'almond milk': ['milk', 'oat milk'],
+                'pork': ['chicken', 'turkey'],
+                'oranges': ['apples', 'bananas'],
+                'quinoa': ['rice', 'pasta'],
+                'yogurt': ['cheese', 'milk'],
+                'peppers': ['cucumber', 'tomatoes'],
+                'broccoli': ['carrots', 'spinach'],
+                'spinach': ['broccoli', 'carrots']
             };
             
             // Check if we have hardcoded alternatives
@@ -489,8 +532,10 @@ Example: "beef" → "chicken, pork"`;
                 console.error('❌ AI alternatives failed:', error);
             }
             
-            // Final fallback
-            return ['alternative 1', 'alternative 2'];
+            // Final fallback - create meaningful names based on the original item
+            const fallbackAlternatives = generateFallbackAlternatives(itemName);
+            console.log('🔄 Using fallback alternatives for:', itemName, '→', fallbackAlternatives);
+            return fallbackAlternatives;
             
             /* COMMENTED OUT - ORIGINAL AI INTEGRATION (TO FIX LATER)
             // First try to use the Excel data to find similar items
@@ -679,17 +724,17 @@ Example: If input is "apples", return: "Bananas, Oranges"`;
                 changed: !isOriginal
             });
             
+            // Always calculate savings (even if item is kept the same, we show 0 savings)
+            addToTotalSavings(originalItem, selectedItem, foodTable, recorded_total_savings);
+            
             if (!isOriginal) {
-                // Track savings when user chooses a different item
-                addToTotalSavings(originalItem, selectedItem, foodTable, recorded_total_savings);
-                
                 // Replace the current item in the list
                 currentShoppingList[currentItemIndex] = selectedItem;
                 updateShoppingListDisplay();
-                
-                // Display updated savings
-                displaySavings();
             }
+            
+            // Always display updated savings
+            displaySavings();
             
             // Move to next item
             currentItemIndex++;
